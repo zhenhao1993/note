@@ -1,0 +1,146 @@
+环境准备
+[root@room9pc01 ~]# rht-vmctl reset classroom
+classroom [OK]
+域 classroom 已开始
+
+[root@room9pc01 ~]# rht-vmctl reset server
+server [OK]
+域 server 已开始
+
+[root@room9pc01 ~]# rht-vmctl reset desktop
+desktop [OK]
+域 desktop 已开始
+
+
+################################################
+配置聚合连接(也称为链路聚合)
+
+
+                eth0       eth1
+
+                   虚拟网卡       haxi0  192.168.1.1
+
+
+• team,聚合连接(也称为链路聚合)
+– 由多块网卡(team-slave)一起组建而成的虚拟网卡,即“组队”
+
+– 作用1:轮询式(roundrobin)的流量负载均衡
+– 作用2:热备份(activebackup)连接冗余
+
+制作链路聚合：
+1.建立虚拟的网卡team0   参考 man teamd.conf
+# nmcli connection add  type team con-name team0 
+  ifname team0   autoconnect yes     
+  config '{"runner": {"name": "activebackup"}}'
+
+解析：nmcli connection  添加   类型  为team
+         配置文件名为 team0   网卡名为  team0  每次开机自动启用
+         链路聚合的工作模式为   热备份
+
+# ifconfig 
+
+如果有敲错，一定要删除
+# nmcli connection delete team0   #删除配置
+
+2.添加成员
+# nmcli connection add type team-slave  
+ con-name team0-1 ifname  eth1   master team0
+
+# nmcli connection add type team-slave  
+ con-name team0-2 ifname  eth2   master team0
+
+解析：nmcli connection 添加   类型为  team的成员
+          配置文件名  team0-1  网卡为 eth1  主设备为  team0
+
+如果敲错，一定要删除配置
+[root@server0 ~]# nmcli connection delete team0-1
+[root@server0 ~]# nmcli connection delete team0-2
+
+3.配值team0的IP地址
+# nmcli connection modify team0       
+ ipv4.method manual 
+ ipv4.addresses 192.168.1.1/24      
+ connection.autoconnect  yes
+
+4.激活配置
+[root@server0 ~]# nmcli connection up team0
+[root@server0 ~]# nmcli connection up team0-1
+[root@server0 ~]# nmcli connection up team0-2
+
+##################################################
+专用于显示team信息命令
+[root@server0 ~]# teamdctl team0 state
+[root@server0 ~]# ifconfig eth1 down
+[root@server0 ~]# teamdctl team0 state
+
+
+#################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
