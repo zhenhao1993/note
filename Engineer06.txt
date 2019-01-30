@@ -1,0 +1,465 @@
+环境准备:
+虚拟机Server0:
+# firewall-cmd  --set-default-zone=trusted
+
+虚拟机Desktop0:
+# firewall-cmd  --set-default-zone=trusted
+
+################################################
+
+HTTP服务基础    
+
+搭建基本Web服务
+虚拟机server0
+1.安装软件包httpd
+2.书写一个页面文件
+ echo '<h1>NSD1809 Web' > /var/www/html/index.html
+3.重起服务
+# systemctl restart httpd
+# systemctl enable httpd
+
+4.虚拟机desktop0 访问测试: firefox  172.25.0.11
+
+
+
+Web通信基本概念
+• 基于 B/S (Browser/Server)架构的网页服务
+– 服务端提供网页
+– 浏览器下载并显示网页
+
+• Hyper Text Markup Language(HTML),超文本标记语言
+• Hyper Text Transfer Protocol(HTTP),超文本传输协议
+
+• 软件包:httpd
+• 系统服务:httpd
+• 提供的默认配置
+– Listen:监听地址:端口(80)
+– ServerName:本站点注册的DNS名称(空缺)
+– DocumentRoot:网页根目录(/var/www/html)
+– DirectoryIndex:起始页/首页文件名(index.html)
+
+
+############################################
+– ServerName:本站点注册的DNS名称(空缺)
+
+    需要DNS服务器域名解析前提
+
+        DNS服务器:classroom.example.com
+
+               域名:server0.example.com
+               域名:www0.example.com
+               域名:webapp0.example.com
+
+[root@desktop0 ~]# nslookup server0.example.com
+[root@desktop0 ~]# nslookup www0.example.com
+[root@desktop0 ~]# nslookup webapp0.example.com
+
+################################################
+主配置文件:/etc/httpd/conf/httpd.conf
+– ServerName:本站点注册的DNS名称(空缺) 
+
+虚拟机Server0:
+1.修改主配置文件:/etc/httpd/conf/httpd.conf
+  vim命令模式下  /ServerName  全文查找ServerName
+
+   95 ServerName server0.example.com:80
+
+2.重起httpd服务
+ #systemctl restart httpd
+
+3.访问测试
+[root@desktop0 ~]# firefox server0.example.com
+
+################################################
+
+– DocumentRoot:网页文件根目录
+                            (存放网页文件路径默认是/var/www/html)
+
+虚拟机Server0
+# mkdir /var/www/myweb
+# echo '<h1>wo shi MyWeb' > /var/www/myweb/index.html
+# cat /var/www/myweb/index.html
+
+[root@server0 ~]# vim /etc/httpd/conf/httpd.conf 
+DocumentRoot "/var/www/myweb"  #指定网页文件存放路径
+
+[root@server0 ~]# systemctl restart httpd
+
+虚拟机desktop0
+[root@desktop0 ~]#  firefox server0.example.com
+
+################################################
+当 客户端  172.25.0.11:80  服务端 httpd--->DocmentRoot
+
+DocumentRoot "/var/www/myweb" 
+
+网络路径:firefox  server0.example.com
+实际路径:/var/www/myweb
+
+网络路径:firefox  server0.example.com/abc/private
+实际路径:/var/www/myweb/abc/private
+
+DocumentRoot "/var/www/myweb" 
+
+firefox server0.example.com/var/www/myweb/abc/private
+
+实际路径:/var/www/myweb/var/www/myweb/abc/private
+
+
+#################################################
+
+# mkdir /var/www/myweb/abc
+# echo '<h1>wo shi abc' > /var/www/myweb/abc/index.html
+
+
+# firefox server0.example.com/abc
+
+
+################################################
+虚拟Web主机
+– 由同一台服务器提供多个不同的Web站点
+
+• 区分方式
+– 基于域名的虚拟主机
+– 基于端口的虚拟主机
+– 基于IP地址的虚拟主机
+
+
+################################################
+– 基于域名的虚拟主机
+
+ <VirtualHost  IP地址:端口>
+   ServerName  此站点的DNS名称
+   DocumentRoot  此站点的网页根目录
+ </VirtualHost>
+
+• 配置文件路径
+– /etc/httpd/conf/httpd.conf  主配置文件
+– /etc/httpd/conf.d/*.conf    调用配置文件
+
+
+虚拟机server0
+# mkdir /var/www/qq /var/www/baidu
+# echo '<h1>企鹅'  > /var/www/qq/index.html
+# echo '<h1>百度'  > /var/www/baidu/index.html
+
+# vim /etc/httpd/conf.d/nsd01.conf
+ <VirtualHost  *:80>         #所有IP地址开放80端口
+   ServerName    www0.example.com  #指定网站名称
+   DocumentRoot  /var/www/qq       #指定网页文件存放路径
+ </VirtualHost>
+
+ <VirtualHost  *:80>
+   ServerName    webapp0.example.com
+   DocumentRoot  /var/www/baidu
+ </VirtualHost>
+
+ <VirtualHost *:80>
+  ServerName   server0.example.com
+  DocumentRoot   /var/www/myweb
+ </VirtualHost>
+
+# systemctl  restart httpd
+
+
+
+一旦使用虚拟web主机功能,所有的网站都必须用虚拟web主机实现
+
+#################################################
+网页内容访问
+
+
+客户机地址限制
+
+• 使用 <Directory> 配置区段
+– 每个文件夹自动继承其父目录的访问权限
+– 除非针对子目录有明确设置
+
+               /opt     拒绝所有访问
+               /opt/index.html
+
+               /opt/test/index.html
+
+    <Directory 目录的绝对路径>
+	.. ..
+	Require all denied|granted
+	Require ip IP或网段地址 .. ..
+	</Directory>
+
+   <Directory  /var/www/html>
+	Require all denied|granted #拒绝所有 | 允许所有
+	Require ip 172.25.0.10   #仅允许172.25.0.10进行访问
+   </Directory>
+
+
+
+
+案例3:配置网页内容访问
+在 Web 网站 http://server0.example.com 的
+DocumentRoot 目录下创建一个名为 private 的子目录,要求如下:
+
+1.查看 server0.example.com 的DocumentRoot 目录
+# cat /etc/httpd/conf.d/nsd01.conf 
+
+2.创建目录,写入页面文件
+# mkdir /var/www/myweb/private
+# echo '<h1> wo shi private' > /var/www/myweb/private/index.html
+
+# cat /var/www/myweb/private/index.html
+
+3.在虚拟机server与虚拟机desktop上 访问测试
+   firefox  server0.example.com/private
+
+4.从 server0 上,任何人都可以浏览 private的内容,
+但是从其他系统不能访问这个目录的内容  
+[root@server0 ~]# vim /etc/httpd/conf/httpd.conf 
+[root@server0 ~]# vim /etc/httpd/conf.d/nsd02.conf
+<Directory "/var/www/myweb/private">
+    Require ip 172.25.0.11
+</Directory>
+[root@server0 ~]# systemctl restart httpd
+
+5.在虚拟机desktop0进行验证:
+[root@desktop0 ~]#firefox server0.example.com/private
+Forbidden
+You don't have permission to access /private on this server.
+
+################################################
+案例4:使用自定Web根目录
+调整 Web 站点 http://server0.example.com 的网页
+目录,要求如下:
+1)新建目录 /webroot,作为此站点新的网页目录
+  # mkdir /webroot
+  # echo '<h1>wo shi webroot' > /webroot/index.html
+2)修改虚拟Web主机配置文件,指定新的网页目录
+ # vim /etc/httpd/conf.d/nsd01.conf 
+   <VirtualHost *:80>
+    ServerName  server0.example.com
+    DocumentRoot  /webroot
+   </VirtualHost>
+3)修改Web访问控制配置文件,允许所有人访问
+  # vim /etc/httpd/conf.d/nsd02.conf 
+   <Directory    "/webroot">
+     Require  all  granted      
+   </Directory>
+4)重起服务
+[root@server0 ~]# systemctl restart httpd
+
+5) 修改SELinux策略,安全上下文值(标签值)  
+[root@server0 ~]# ls  -Zd  /var/www/
+[root@server0 ~]# ls  -Zd  /webroot/
+
+• 方式1:参照标准目录,重设新目录的属性
+– chcon [-R] --reference=模板目录   新目录
+
+# chcon  -R --reference=/var/www/  /webroot
+
+[root@server0 ~]# ls  -Zd  /var/www/
+[root@server0 ~]# ls  -Zd  /webroot/ 
+
+###########################################
+  客户端访问服务端:
+        1.防火墙
+        2.服务本身的访问控制
+        3.本地目录的权限
+        4.安全增强版 SELinux策略
+#############################################
+部署动态网站
+
+   LAMP (Linux Apache MySQL/MariaDB php/python) 
+
+   LNMP (Linux Nginx MySQL/MariaDB php/python) 
+
+
+静态网站的运行
+• 服务端的原始网页 = 浏览器访问到的网页
+– 由Web服务软件处理所有请求
+– 文本(txt/html)、图片(jpg/png)等静态资源
+
+
+动态网站的运行
+• 服务端的原始网页 ≠ 浏览器访问到的网页
+– 由Web服务软件接受请求,动态程序转后端模块处理
+– PHP网页、Python网页、JSP网页......
+
+虚拟机Server0:
+1.以webapp0.example.com部署Python页面
+# cat /etc/httpd/conf.d/nsd01.conf #查看DocmentRoot
+# cd /var/www/baidu/
+# wget http://classroom.example.com/pub/materials/webinfo.wsgi
+
+# cat webinfo.wsgi
+
+2.用户方便的访问(页面跳转/页面的别名)
+
+  Alias   网络路径    本机实际路径
+[root@server0 /]# vim /etc/httpd/conf.d/nsd01.conf
+  <VirtualHost *:80>
+   ServerName  webapp0.example.com
+   DocumentRoot  /var/www/baidu
+   Alias    /     /var/www/baidu/webinfo.wsgi
+      当客户端直接访问网页文件根目录时,将webinfo.wsgi呈现
+  </VirtualHost>
+[root@server0 /]# systemctl restart httpd
+
+3.安装mod_wsgi软件包,翻译Python页面代码
+[root@server0 /]# yum -y install mod_wsgi
+
+4.修改配置文件,进行翻译Python页面代码 
+
+[root@server0 /]# vim /etc/httpd/conf.d/nsd01.conf
+  <VirtualHost *:80>
+   ServerName  webapp0.example.com
+   DocumentRoot  /var/www/baidu
+   WsgiScriptAlias  /  /var/www/baidu/webinfo.wsgi
+      当客户端直接访问网页文件根目录时,将webinfo.wsgi呈现
+  </VirtualHost>
+[root@server0 /]# systemctl restart httpd
+
+  Unix时间戳: 从1970-1-1 0:0:0到现在时间,所经历的秒数
+
+5.此虚拟主机侦听在端口8909
+Listen 8909           #配置httpd程序监听8909端口
+<VirtualHost *:8909>  #虚拟web主机监听8909
+  ServerName webapp0.example.com
+  DocumentRoot /var/www/baidu
+  WsgiScriptAlias /  /var/www/baidu/webinfo.wsgi
+</VirtualHost>
+
+6. SELinux非默认端口的开放
+# semanage port -l | grep http
+# semanage port -a -t http_port_t     -p tcp 8909 
+   -a:添加    -t:类型     -p:协议
+# systemctl restart httpd
+
+7.验证:
+ http://webapp0.example.com:8909
+
+##############################################
+默认端口访问优先级最高,默认端口不匹配,显示第一个虚拟Web主机内容
+
+###############################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

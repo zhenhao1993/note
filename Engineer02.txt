@@ -1,0 +1,357 @@
+Shell脚本
+
+   什么是脚本：可以执行的一个文本文件，可以实现某种功能
+
+
+    A4纸     中文                 文件    Linux
+       1.                                1.
+       2.                                2.
+       3.                                3.
+案例1：书写一个shell ，在屏幕输出hello  world
+
+ # vim /root/hello.sh
+ echo hello world
+
+ # ls -l /root/hello.sh
+ # chmod +x  /root/hello.sh   #赋予执行权限
+ # ls -l /root/hello.sh
+ # /root/hello.sh
+
+
+规范Shell脚本的一般组成      
+• #! 环境声明，下面的代码用哪一个程序来解释
+• # 注释文本
+• 可执行代码
+
+[root@server0 ~]# vim /root/hello.sh
+ #!/bin/bash
+ echo hello world
+ cat /etc/redhat-release 
+ uname -r
+ hostname 
+ ifconfig | head -2
+[root@server0 ~]#  /root/hello.sh
+
+##############################################
+重定向输出
+
+    > :只收集前面命令的正确信息
+    2>:只收集前面命令的错误信息
+    &>：收集前面命令的错误信息与正确信息
+
+[root@server0 ~]# echo 123 > /opt/1.txt
+[root@server0 ~]# cat  /opt/1.txt  #正确的输出信息
+[root@server0 ~]# cat  /etc        #报错信息
+
+# cat /etc  /opt/1.txt 
+# cat /etc  /opt/1.txt > /opt/a.txt  #只收集正确信息
+# cat /opt/a.txt
+
+# cat /etc  /opt/1.txt 2> /opt/a.txt #只收集错误信息
+# cat /opt/a.txt
+
+# cat /etc  /opt/1.txt &> /opt/a.txt #正确错误都收集
+# cat /opt/a.txt
+
+#############################################
+案例2：书写一个创建用户的脚本，并设置密码
+
+  黑洞设备：/dev/null  
+
+[root@server0 ~]# vim /root/user.sh
+ #!/bin/bash
+ useradd nsd05  &>  /dev/null
+ echo 用户nsd05创建成功
+ echo 123 | passwd --stdin nsd05  &> /dev/null
+ echo 用户nsd05密码设置成功
+
+[root@server0 ~]# chmod +x /root/user.sh
+[root@server0 ~]# /root/user.sh
+
+  为了增加脚本灵活，适应多变的环境，所以使用变量
+  变量：容器    以不变的名称，存放可以变化的值 
+
+    变量名=储存的值      
+   使用变量储存的值 $变量名
+[root@server0 ~]# vim /root/user.sh
+ #!/bin/bash
+ a=natsha
+ useradd  $a  &> /dev/null
+ echo  用户$a创建成功
+ echo  123  |  passwd --stdin $a &> /dev/null
+ echo  用户$a密码设置成功
+[root@server0 ~]# 
+
+#############################################
+什么是变量
+• 以不变的名称存放的可能会变化的值
+– 变量名=变量值
+– 方便以固定名称重复使用某个值
+– 提高对任务需求、运行环境变化的适应能力
+
+
+– 变量名只能由字母/数字/下划线组成,区分大小写
+– 变量名不能以数字开头,不要使用关键字和特殊字符
+
+  A 2004file   B tou_on1   C a$b    D 1abc
+
+
+• 设置变量时的注意事项
+– 若指定的变量名已存在,相当于为此变量重新赋值
+– 等号两边不要有空格
+
+############################################
+• 基本格式
+– 引用变量值:$变量名
+– 查看变量值:echo $变量名、echo ${变量名}
+[root@server0 ~]# a=rhel
+[root@server0 ~]# echo $a
+[root@server0 ~]# echo $a7   #输出为空，会将a7作为整体
+[root@server0 ~]# echo ${a}7
+[root@server0 ~]# echo ${a}6
+
+###########################################
+ 降低脚本的使用难度，可以产生交互
+
+  read  
+  -p '屏幕输出信息'
+
+     作用：1. 可以产生交互   2.记录用户在键盘上的输入
+              3.将用户在键盘上的输入内容赋值给变量储存
+
+[root@server0 ~]# vim  /root/user.sh  
+                                                                
+ #!/bin/bash
+ read  -p   '请输入您要创建的用户名：'     a
+ useradd  $a   &>  /dev/null
+ echo  用户$a创建成功
+ echo  123 |  passwd  --stdin  $a &> /dev/null
+ echo  用户$a密码设置成功
+[root@server0 ~]# 
+
+   单引 '  ' ：取消所有特殊字符含义
+[root@server0 ~]# a=10
+[root@server0 ~]# echo $a
+10
+[root@server0 ~]# echo '$a'
+$a
+[root@server0 ~]# 
+
+  $( )或 反撇号`  `:将命令的输出，作为参数参与下一个命令执行
+       %F    完整日期格式，等价于  年-月-日
+[root@server0 opt]# date +%F
+
+[root@server0 opt]# mkdir nsd1809-$(date +%F)
+[root@server0 opt]# ls
+
+[root@server0 opt]# mkdir $(date  +%F)
+[root@server0 opt]# ls
+
+[root@server0 opt]# mkdir ab-`date +%F`
+[root@server0 opt]# ls
+[root@server0 opt]# mkdir nb-`hostname`
+[root@server0 opt]# ls
+
+
+
+#############################################
+
+环境变量  变量名一般都大写,用来设置用户/系统环境
+              系统定义赋值完成，用户直接使用即可
+
+    USER=永远储存当前登陆的用户名
+[root@server0 opt]# echo $USER
+root
+[root@server0 opt]# su - student
+[student@server0 ~]$ echo $USER
+student
+[student@server0 ~]$ exit
+logout
+[root@server0 opt]# 
+
+
+位置变量  bash内置,存储执行脚本时提供的命令行参数(非交互)
+              系统定义赋值完成，用户直接使用即可
+[root@server0 /]# vim /root/user.sh
+#!/bin/bash
+useradd $1  &> /dev/null
+echo 用户$1创建成功
+echo 123 | passwd --stdin $1 &> /dev/null
+echo 用户$1密码设置成功
+[root@server0 /]# /root/user.sh  nsd12
+
+[root@server0 /]# vim /root/1.sh
+#!/bin/bash
+echo $1
+echo $2
+echo $3
+[root@server0 /]# /root/1.sh  test01  abc  haha
+
+
+[root@server0 /]# vim /root/1.sh 
+[root@server0 /]# cat /root/1.sh
+#!/bin/bash
+echo $1
+cat -n $1 | head -$2
+[root@server0 /]# /root/1.sh /etc/passwd 3
+
+预定义变量   bash内置,可直接调用的特殊值,不能直接修改
+                  系统定义赋值完成，用户直接使用即可
+
+	$#  已加载的位置变量的个数
+	$*  所有位置变量的值
+
+	$?  程序退出后的状态值,0表示正常,其他值异常
+
+[root@server0 /]# vim /root/1.sh 
+[root@server0 /]# cat /root/1.sh
+#!/bin/bash
+echo $1
+echo $2
+echo $3
+echo $#     #统计一共输入了几个命令行参数
+echo $*     #输出所有的命令行参数
+[root@server0 /]# /root/1.sh 100 200 test
+
+[root@server0 /]# cat /etc/redhat-release 
+Red Hat Enterprise Linux Server release 7.0 (Maipo)
+[root@server0 /]# echo $?
+0
+[root@server0 /]# cat /etc/
+cat: /etc/: 是一个目录
+[root@server0 /]# echo $?
+1
+
+############################################
+
+条件测试  – [  测试表达式  ]   条件表达式每一部分都要有空格
+
+• 检查文件状态
+	-e:文档存在为真
+	-d:文档存在,且必须为目录才为真
+	-f:文档存在,且必须为文件才为真
+	-r:文档存在,且必须对其有读取权限才为真
+	-w:文档存在,且必须对其有写入权限才为真
+	-x:文档存在,且必须对其有执行权限才为真
+
+[root@server0 /]# [ -e /etc ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# [ -e /dcc ]
+[root@server0 /]# echo $?
+1
+[root@server0 /]# [ -d /etc/passwd ]
+[root@server0 /]# echo $?
+1
+[root@server0 /]# [ -f /etc/passwd ]
+[root@server0 /]# echo $?
+0
+
+• 比较整数大小    
+   -gt:大于
+   -ge:大于等于
+   -eq:等于
+   -ne:不等于
+   -lt:小于
+   -le:小于等于
+[root@server0 /]# [ 1 -gt 1 ]
+[root@server0 /]# echo $?
+1
+[root@server0 /]# [ 1 -ge 1 ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# [ 1 -eq 1 ]
+[root@server0 /]# echo $?
+0
+
+• 字符串比对
+     ==:两个字符串一致为真      
+     !=:两个字符串不一致为真
+[root@server0 /]# [ redhat == CentOS ]
+[root@server0 /]# echo $?
+1
+[root@server0 /]# [ root == $USER ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# echo $USER
+root
+[root@server0 /]# [ haha != xixi ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# 
+
+##########################################
+
+if双分支处理
+
+	if [条件测试];then
+	   命令序列xx
+	else
+	   命令序列yy
+	fi
+[root@server0 /]# vim /root/if01.sh 
+ #!/bin/bash
+ if   [  $1  ==  hi  ];then
+   echo  hello
+ else
+   echo  hi
+ fi
+[root@server0 /]#  /root/if01.sh  hi
+
+[root@server0 /]#  /root/if01.sh  hello
+
+
+if多分支处理
+
+	if [条件测试1];then
+	  命令序列xx
+          命令序列bb
+	elif [条件测试2];then
+	  命令序列yy
+     elif [条件测试3];then
+	  命令序列aa
+          ......
+	else
+	  命令序列zz
+	fi
+
+
+
+ 案例：
+   利用read 读取用户输入的成绩.
+   如果成绩 大于等于90，则输出  优秀
+   如果成绩 大于等于80，则输出  良好
+   如果成绩 大于等于70，则输出  一般
+   如果成绩 大于等于60，则输出  合格
+   以上条件均不满足，则输出  一首凉凉送给你！
+[root@server0 /]# vim /root/if02.sh  
+#!/bin/bash
+read  -p '请输入您的成绩:'   num
+
+if  [ $num -ge 90  ];then
+   echo  优秀
+elif [ $num -ge 80  ];then
+   echo  良好
+elif [ $num -ge 70  ];then
+   echo  一般
+elif [ $num -ge 60  ];then
+   echo  合格
+else
+  echo  '一首凉凉送给你！'
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

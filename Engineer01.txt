@@ -1,0 +1,340 @@
+ 扇区  512 字节
+一块硬盘的“艺术”之旅
+• 识别硬盘 => 分区规划 => 格式化 => 挂载使用
+   毛坯楼层 => 打隔断 => 装修 => 入驻
+
+ 格式化:赋予空间存储数据的规则(文件系统)
+
+一  识别硬盘,由系统自动完成
+[root@server0 ~]# lsblk    #列出所有识别的硬盘设备 
+NAME    SIZE  TYPE MOUNTPOINT
+vda      10G  disk 
+└─vda1  10G  part /
+vdb      10G  disk 
+
+[root@server0 ~]# ls /dev/vdb
+
+二  分区的规划  
+
+    MBR分区模式
+          三种分区类型: 主分区   扩展分区   逻辑分区
+
+          3个主分区, 一个扩展分区, N个逻辑分区
+
+          可以存储数据的分区: 主分区  逻辑分区
+
+          最多划分4主分区
+          此模式支持最大空间  2.2T
+
+划分分区   
+[root@server0 ~]# fdisk  /dev/vdb
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +2G
+  p 查看分区表
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +1G
+  d 删除分区
+  w 保存并退出
+
+[root@server0 ~]# lsblk      #查看划分的分区信息
+[root@server0 ~]# ls /dev/vdb[1-2]
+
+三 格式化分区,赋予文件系统
+[root@server0 ~]# mkfs.ext4 /dev/vdb1  #格式化成ext4
+[root@server0 ~]# blkid /dev/vdb1    #查看文件系统类型
+ 
+[root@server0 ~]# mkfs.xfs /dev/vdb2  #格式化成xfs
+[root@server0 ~]# blkid /dev/vdb2     #查看文件系统类型
+
+四  挂载使用
+[root@server0 ~]# mkdir /part1
+[root@server0 ~]# mount /dev/vdb1 /part1
+[root@server0 ~]# df  -h   #查看正在挂载分区的使用情况
+[root@server0 ~]# mkdir /part2
+[root@server0 ~]# mount /dev/vdb2 /part2
+[root@server0 ~]# df  -h   #查看正在挂载分区的使用情况
+
+五  开机自动挂载
+• 配置文件 /etc/fstab 的记录格式
+ – 设备路径      挂载点       类型      参数         备份标记   检测顺序
+ 
+[root@server0 ~]# vim  /etc/fstab
+/dev/vdb1  /part1  ext4   defaults 0 0
+/dev/vdb2  /part2  xfs   defaults 0 0
+
+[root@server0 ~]# umount /dev/vdb1
+[root@server0 ~]# umount /dev/vdb2
+[root@server0 ~]# df -h
+[root@server0 ~]# mount -a 
+   检测/etc/fstab开机自动挂载配置文件,格式是否正确
+   检测/etc/fstab中,书写完成,但当前没有挂载的设备,进行挂载  
+[root@server0 ~]# df -h
+
+六  综合分区
+    3个主分区  一个扩展分区   N个逻辑分区
+   最终有3个主分区，分别为2G、1G、1G
+   创建扩展分区 --->  两个逻辑分区，分别为1G、1G
+[root@server0 ~]# fdisk  /dev/vdb
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +1G
+   p 查看分区表
+   n 创建扩展分区 
+          ----->回车---->起始回车----->结束回车  将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+1G
+   n 创建逻辑分区----->起始回车------>结束+1G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# partprobe   #刷新所有分区 
+[root@server0 ~]# lsblk
+
+  设备表示含义
+   /dev/sda5: 
+           SCSI接口的硬盘 第一块硬盘 的第5个分区
+           SCSI接口的硬盘 第一块硬盘 的第1个逻辑分区
+
+##############################################
+
+总结:
+1.识别硬盘   lsblk
+2.进行分区   fdisk
+3.刷新所有分区   partprobe
+4.进行格式化    mkfs.ext4  mkfs.xfs  blkid(查看文件系统)
+5.挂载使用  mount  ---> df -h (查看是否挂载成功)
+6.书写配置文件/etc/fstab   ---> mount -a(测试)
+
+#################################################
+继续分区,关闭虚拟机server,添加一块新的硬盘
+1.关闭虚拟机server,图形添加一块新的硬盘
+[root@server0 ~]# poweroff 
+Connection to 172.25.0.11 closed by remote host.
+Connection to 172.25.0.11 closed.
+[root@room9pc01 ~]# 
+[root@room9pc01 ~]# ssh -X root@172.25.0.11
+[root@server0 ~]# lsblk 
+
+2.划分分区
+ 分区要求：划分3个主分区   1个扩展分区    2个逻辑分区
+[root@server0 ~]# fdisk  /dev/vdc  
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +10G
+         连续创建3个10G主分区
+      ......
+   n 创建扩展分区 
+               ----->回车---->起始回车----->结束回车  将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+10G
+   n 创建逻辑分区----->起始回车------>结束+10G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# lsblk 
+
+###############################################
+LVM逻辑卷   
+
+   作用: 
+      1.可以整合分散的空间(分区或整个硬盘)
+      2.空间可以扩大
+
+     将众多的物理卷(PV)组建成卷组(VG),再从卷组中划分逻辑卷(LV)
+
+      砖------>大房子------>打隔断------->装修------->入住
+
+
+successfully 成功
+
+
+一  创建逻辑卷
+1.创建卷组
+ 命令格式: vgcreate 卷组名   设备路径
+[root@server0 ~]# vgcreate  systemvg  /dev/vdc[1-2]
+  Physical volume "/dev/vdc1" successfully created
+  Physical volume "/dev/vdc2" successfully created
+  Volume group "systemvg" successfully created
+[root@server0 ~]# pvs #查看物理卷信息
+[root@server0 ~]# vgs #查看卷组信息
+
+2.创建逻辑卷
+命令格式: lvcreate -L 逻辑卷的大小   -n 逻辑卷的名称  设备路径
+
+  # lvcreate -L 16G -n mylv systemvg      
+  # lvs   #查看逻辑卷信息
+
+3.逻辑卷的使用
+[root@server0 ~]# mkfs.ext4  /dev/systemvg/mylv 
+[root@server0 ~]# blkid  /dev/systemvg/mylv
+[root@server0 ~]# vim  /etc/fstab
+/dev/systemvg/mylv  /lv  ext4  defaults 0 0
+
+[root@server0 ~]# mkdir /lv
+[root@server0 ~]# mount -a
+[root@server0 ~]# df -h
+
+###############################################
+  逻辑卷的空间来源于卷组, 只能找基于它创建的卷组
+
+二  逻辑卷的扩展:支持线上工作
+
+1.卷组有足够的剩余空间       
+[root@server0 ~]# lvs
+[root@server0 ~]# vgs
+ A:直接扩展逻辑卷的空间
+[root@server0 ~]# lvextend -L 18G /dev/systemvg/mylv 
+[root@server0 ~]# lvs
+ B:文件系统的扩大
+   resize2fs :刷新ext4文件系统
+   xfs_growfs:刷新xfs文件系统
+[root@server0 ~]# df -h
+[root@server0 ~]# resize2fs /dev/systemvg/mylv 
+[root@server0 ~]# df -h
+
+2.卷组没有足够的剩余空间
+   A:首先扩展卷组
+[root@server0 ~]# vgs
+[root@server0 ~]# lvs
+[root@server0 ~]# vgextend systemvg /dev/vdc3
+[root@server0 ~]# vgs
+   B:直接扩展逻辑卷的空间
+[root@server0 ~]# lvextend -L 25G /dev/systemvg/mylv 
+[root@server0 ~]# lvs
+   C:文件系统的扩大
+[root@server0 ~]# df -h
+[root@server0 ~]# resize2fs /dev/systemvg/mylv 
+[root@server0 ~]# df -h
+
+###############################################
+了解:  逻辑卷也可以减小
+      ext4文件系统支持减小
+      xfs文件系统不支持减小
+
+ 卷组划分空间的单位:  PE  默认 4M
+
+[root@server0 ~]# vgdisplay  #显示卷组详细信息
+
+  PE Size         4.00 MiB  
+
+
+
+    请创建一个大小为250M的逻辑卷redhat.
+  # vgchange -s 1M  systemvg      #修改PE的大小
+  # vgdisplay      #显示卷组详细信息
+
+  # lvcreate -L 250M -n redhat   systemvg 
+  # lvs
+
+• 创建逻辑卷的时候指定PE个数
+– lvcreate -l PE个数   -n 逻辑卷名 卷组名
+
+# lvcreate -l 50 -n lvtest01   systemvg 
+# lvs
+
+• 创建卷组的时候设置PE大小
+– vgcreate -s PE大小 卷组名 空闲分区...
+
+# vgcreate -s 16MiB datastore /dev/vdb6
+
+# vgchange -s  16MiB  卷组名   #卷组已存在可以修改PE大小
+
+
+
+
+
+
+2. 基于刚建立的 2000MiB 分区构建新的 LVM 存储
+– 新的逻辑卷命名为 database,大小为50个物理扩展单
+元(Physical Extent),属于 datastore 卷组
+– 在 datastore 卷组中的所有逻辑卷,其物理扩展单元
+(Physical Extent)的大小为16MiB
+– 使用 EXT3 文件系统对逻辑卷 database 格式化,此逻
+辑卷应该在开机时自动挂载到 /mnt/database 目录
+
+
+###############################################
+逻辑卷删除
+  创建:先创建物理卷,在创建卷组,最后创建逻辑卷
+
+  删除:先删除逻辑卷,在删除卷组,最后删除物理卷
+
+[root@server0 ~]# lvremove /dev/systemvg/mylv 
+  Logical volume systemvg/mylv contains a filesystem in use.
+[root@server0 ~]# umount /lv
+[root@server0 ~]# lvremove /dev/systemvg/mylv 
+Do you really want to remove active logical volume mylv? [y/n]: y
+  Logical volume "mylv" successfully removed
+[root@server0 ~]# 
+
+删除所有的逻辑卷后,可以删除卷组
+[root@server0 ~]# vgremove systemvg 
+  Volume group "systemvg" successfully removed
+[root@server0 ~]# vgs
+  No volume groups found
+[root@server0 ~]# 
+
+
+
+[root@server0 ~]# pvremove /dev/vdc[1-3]
+[root@server0 ~]# pvs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
