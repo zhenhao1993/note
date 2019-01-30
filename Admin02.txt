@@ -1,0 +1,362 @@
+Linux是一种操作系统!!  
+ 
+  操作系统：一堆软件的集合，让计算机硬件正常运行
+
+
+Unix/Linux发展史
+
+• UNIX诞生, 1970-1-1
+
+• Linux之父,Linus Torwalds
+
+    内核=让计算机硬件正常的启动
+
+    用户----------> 内核  ----------->硬件
+
+– 版本号:主版本.次版本.修订号
+
+• 是一套公开发布的完整Linux系统
+– Linux内核 + 各种应用软件
+
+• 发行版的名称/版本由发行方决定
+– Red Hat Enterprise Linux 5/6/7
+– Suse Linux Enterprise 12
+– Debian Linux 7.8
+– Ubuntu Linux 14.10/15.04
+
+#################################################
+在虚拟机安装RHEL7.4
+1.新建全新的虚拟机
+
+  Ctrl+ALT=鼠标回到真机
+
+
+如何使用硬盘?
+• 一块硬盘的“艺术”之旅
+– 物理硬盘==>分区规划==>格式化==>读/写文档
+
+  毛坯楼层==>打隔断 ==>装修  ==>入驻
+
+   格式化：赋予空间存储数据的规则（文件系统）
+
+   常见的文件系统：
+    Windows：   NTFS    FAT
+ 
+    Linux：   ext4（RHEL6）  xfs (RHEL7) 
+              SWAP,交换空间(虚拟内存)
+                                     缓解内存不足
+
+
+############################################
+    根目录(/)：Linux系统所有数据都存放在此目录下
+           Linux系统的起点
+
+    /dev：存放设备（键盘  鼠标  光驱   硬盘）相关的数据
+
+      路径： /dev/abc/1.txt
+
+  hd,表示IDE设备
+  sd,表示SCSI设备
+  vd,表示虚拟化设备  
+
+     /dev/hda1   /dev/hdb   /dev/hdc  /dev/hdd
+
+     /dev/sda2   /dev/sdb   /dev/sdc  /dev/sdd
+
+    /dev/sda3表示的含义：SCSI设备第一块第三个分区 
+
+##################################################
+RHEL7基本操作
+
+命令行基本操作 
+
+• 虚拟控制台切换( Ctrl + Alt + Fn 组合键)
+– tty1:图形桌面
+– tty2~tty6:字符控制台
+
+############################################
+图形命令行终端
+   右击 桌面空白处---->打开终端
+
+  Ctrl  shift   +   #变大
+  Ctrl  -  #变小
+
+
+• 命令行提示标识的含义
+– [当前用户@主机名 当前所在的位置]$
+
+– 若当前用户是root,则最后一个字符为 #
+[root@svr7 桌面]#
+– 否则,最后一个字符为 $
+[teacher@svr7 桌面]$
+
+###############################################
+查看及切换目录
+• pwd — Print Working Directory
+– 用途:查看当前所在的位置
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd  [目标文件夹位置]
+
+
+• ls — List
+– 格式:ls [选项]... [目录或文件名]...
+
+
+[root@localhost ~]# pwd
+[root@localhost ~]# cd   / 
+[root@localhost /]# pwd
+[root@localhost /]# ls
+
+[root@localhost /]# cd   /home
+[root@localhost home]# ls
+[root@localhost home]# cd  /
+[root@localhost /]# ls
+
+[root@localhost /]# cd  /root
+[root@localhost ~]# pwd
+[root@localhost ~]# ls
+[root@localhost /]# cd  /boot
+[root@localhost boot]# pwd
+[root@localhost boot]# ls
+
+  蓝色：目录
+  黑色：文本文件
+
+#################################################
+cat查看文本文件内容
+
+[root@localhost /]# ls /etc/hosts
+[root@localhost /]# cat /etc/hosts
+
+[root@localhost /]# ls /root/
+[root@localhost /]# cat /root/anaconda-ks.cfg
+
+[root@localhost /]# ls /etc/passwd
+[root@localhost /]# cat /etc/passwd
+
+查看系统版本
+[root@localhost /]# ls  /etc/redhat-release
+[root@localhost /]# cat  /etc/redhat-release
+
+
+• 命令行的一般格式
+– 命令字      [选项]...       [参数1]   [参数2]...
+
+[root@localhost /]# cat  -n  /etc/passwd
+[root@localhost /]# cat  -n  /etc/hosts
+[root@localhost /]# cat  -n  /etc/redhat-release
+
+[root@localhost /]# cat  --help  #查看命令常见帮助信息
+[root@localhost /]# ls  --help
+
+真机上操作：
+• 列出内核版本
+[root@room9pc01 ~]# uname -r
+
+• 列出CPU处理器信息
+[root@room9pc01 ~]# lscpu
+
+• 检查内存大小、空闲情况
+[root@room9pc01 ~]# cat /proc/meminfo
+MemTotal:       16166612 kB
+
+
+• ls — List
+– 格式:ls [选项]... [目录或文件名]...
+
+• 常用命令选项
+– -l :以长格式显示,显示目录内容的详细属性
+
+[root@localhost /]# ls  -l  /root/
+[root@localhost /]# ls  -l  /boot
+[root@localhost /]# ls  -l  /opt
+[root@localhost /]# ls  -l  /
+[root@localhost /]# ls  -l  /home
+
+查看及修改主机名
+[root@localhost /]# hostname             #查看主机名
+[root@localhost /]# hostname  A.tedu.cn  #设置主机名
+[root@localhost /]# hostname    
+A.tedu.cn
+[root@localhost /]# exit
+
+  #新开一个终端，查看提示符的变化
+
+• 列出已激活的网卡连接信息
+[root@A ~]# ifconfig
+
+           永远代表本机：127.0.0.1
+
+     Ctrl+c = 结束正在运行的命令
+
+[root@A ~]# ifconfig eth0 192.168.1.1  #临时配置IP地址
+[root@A ~]# ifconfig 
+[root@A ~]# ping  192.168.1.1
+
+
+• 关机:poweroff
+[root@A ~]# poweroff
+
+• 重启:reboot
+[root@A ~]# reboot
+
+
+创建空目录
+[root@A /]# mkdir  /root/nsd01  /mnt/nsd02
+[root@A /]# ls /root/
+[root@A /]# ls /mnt/
+
+[root@A /]# mkdir nsd1809   #默认在当前路径下创建
+[root@A /]# pwd
+[root@A /]# ls
+
+[root@A /]# mkdir /opt/test
+[root@A /]# ls /opt
+
+
+################################################
+
+ 以 / 开始的绝对路径
+ 以当前为参照的相对路径
+
+[root@A /]# cd /etc/pki
+[root@A pki]# pwd
+[root@A pki]# ls
+
+[root@A pki]# cd CA     #相对路径
+[root@A CA]# pwd
+
+[root@A CA]# cd /etc/pki
+[root@A pki]# cd /etc/pki/CA   #绝对路径
+[root@A CA]# pwd
+
+  ..(两个点) 表示父目录,上一级目录    
+
+[root@A etc]# cd  /etc/pki/
+[root@A CA]# cd ..
+[root@A pki]# pwd
+/etc/pki
+[root@A pki]# cd ..
+[root@A etc]# pwd
+/etc
+[root@A etc]# cd ..
+[root@A /]# pwd
+/
+[root@A /]#
+
+################################################
+• touch命令
+– 用途:新建空文件
+– 格式:touch 文件名
+
+[root@A /]# touch /opt/1.txt
+[root@A /]# ls /opt/
+1.txt  abc  rh
+[root@A /]# cat /opt/1.txt
+
+
+ less分屏阅读工具
+• 格式:less [选项] 文件名...
+– 优势:支持前后翻页
+• 基本交互操作
+– 按 / 键向后查找(n、N切换)
+
+[root@A /]# less /etc/passwd
+                        按键盘上下键    #进行滚动
+             /bin        #全文查找bin           
+                        按键盘上q键      #退出
+
+
+• head、tail 命令
+– 格式: head -n 数字 文件名
+      tail -n 数字 文件名
+
+[root@A /]# head -1 /etc/passwd
+[root@A /]# head -2 /etc/passwd
+[root@A /]# head -3 /etc/passwd
+[root@A /]# head -4 /etc/passwd
+[root@A /]# head  /etc/passwd
+
+[root@A /]# tail -1 /etc/passwd
+[root@A /]# tail -3 /etc/passwd
+
+• grep工具
+– 用途:输出包含指定字符串的行
+– 格式:grep '查找字符串'      目标文件
+
+[root@A /]# grep root  /etc/passwd
+
+[root@A /]# grep sbin  /etc/passwd
+
+[root@A /]# grep bash  /etc/passwd
+
+[root@A /]# grep lisi  /etc/passwd
+
+#############################################
+命令行的技巧
+[root@A /]# if(连续按两次tab)
+[root@A /]# ifco(tab)
+
+[root@A /]# cat /et(tab)/red(tab)-r(tab)
+
+# ls /etc/sysconfig/network-scripts/ifcfg-eth0
+ 
+# ls /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+
+[root@A /]# ls /et(tab)/pas(tab)
+
+ ALT + . 或 Esc + . = 粘贴上一个命令的参数
+[root@A /]# ls /etc/redhat-release 
+
+[root@A /]# ls -l ALT + .
+
+[root@A /]# cat ALT + .
+
+[root@A /]# cat -n ALT + .
+
+################################################
+vim文本编辑器
+
+  命令模式    插入模式    末行模式
+  
+[root@A /]# vim  /opt/2.txt
+
+            i，o
+                命-----------------》 插入模式(按Esc回到命令模式)
+                令
+                模
+                式 -----------------》末行模式(按Esc回到命令模式)
+                       :(英文)
+
+             末行模式   :wq  保存并退出
+               :q!  强制不保存退出
+[root@A /]# cat /opt/2.txt
+
+################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
