@@ -1,0 +1,427 @@
+如何编写命令行
+
+• Linux命令
+ –  用来实现某一类功能的指令或程序
+  Linux大多数命令执行，都要找到相应的程序
+
+ –  命令的执行依赖于解释器 (默认的解释器/bin/bash)
+
+        用户--------> 解释器--------> 内核------->硬件
+
+   绿色：可以运行的程序
+
+• Linux命令的分类
+– 内部命令:属于解释器的一部分
+– 外部命令:解释器之外的其他程序
+
+命令行的一般格式
+• 基本用法
+– 命令字      [选项]...    [参数1] [参数2]...
+
+
+• 快捷键
+– Ctrl + l:清空整个屏幕
+– Ctrl + a:在命令行光标移动到行首
+
+– Ctrl + u:清空至行首
+– Ctrl + w:往回删除一个单词(以空格界定)
+
+################################################
+mount挂载操作:让目录成为设备的访问点
+
+在系统中显示光盘的内容
+
+  Windows：
+           光盘-------->光驱设备------->CD驱动器（访问点）
+
+  Linux：
+       光盘ISO镜像文件------>光驱设备-------->访问点（目录）
+                   /dev/cdrom
+
+    青色：快捷方式     
+
+    在访问设备资源时，通过访问点进入
+
+1.利用图形，将光盘ISO镜像文件，放入虚拟光驱设备
+2.查看Linux的光驱设备
+[root@A /]# ls /dev/cdrom 
+/dev/cdrom
+[root@A /]# ls -l /dev/cdrom    #查看详细属性
+lrwxrwxrwx. 1 root root 3 9月  30 10:08 /dev/cdrom -> sr0
+[root@A /]# ls /dev/sr0
+
+3.访问光驱设备内容
+  –  格式:  mount   设备路径       挂载点目录
+
+[root@A ~]# mkdir  /dvd
+[root@A ~]# ls   /dvd
+[root@A ~]# mount  /dev/cdrom   /dvd
+
+[root@A ~]# ls   /dvd
+[root@A ~]# ls   /dvd/Packages
+
+• 使用umount命令
+– 格式:umount 挂载点目录
+
+[root@A ~]# umount /dvd	#卸载该挂载点的设备
+[root@A ~]# ls   /dvd
+
+[root@A ~]# mkdir  /nsd
+[root@A ~]# mount  /dev/cdrom  /nsd
+[root@A ~]# ls  /nsd 
+
+#############################################
+注意事项：
+   1.卸载：当前路径不要是挂载点内
+   [root@A dvd]# umount /dvd/
+   umount: /dvd：目标忙。
+
+   2.挂载尽量自己创建目录进行挂载 
+
+##############################################
+目录和文件管理
+
+• pwd — Print Working Directory
+– 用途:查看当前工作目录
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd [目标文件夹位置]
+     
+   /root：管理员的家目录
+   /home:存放所有普通用户家目录的地方  
+
+    ～：表示用户的家目录
+  ~user表示用户user的家目录
+
+[root@A ~]# cd ~lisi             #去往lisi的家目录
+[root@A lisi]# pwd  
+/home/lisi
+[root@A lisi]# useradd natasha   #创建用户natasha
+[root@A lisi]# cd ~natasha
+[root@A natasha]# pwd
+/home/natasha
+[root@A natasha]# useradd tom
+[root@A natasha]# cd ~tom      #去往tom的家目录 
+[root@A tom]# pwd
+/home/tom  
+[root@A tom]# cd  ~root        #去往root的家目录
+[root@A ~]# pwd
+
+  . 表示当前目录
+
+#################################################
+• ls — List
+– 格式:ls [选项]... [目录或文件名]
+
+• 常用命令选项
+ – -l:以长格式显示
+ – -A:包括名称以 . 开头的隐藏文档
+ – -d:显示目录本身(而不是内容)的属性
+ – -h:提供易读的容量单位(K、M等)
+
+[root@A /]# ls -A /root
+[root@A /]# ls -A /boot
+
+[root@A /]# ls -lA /root
+
+[root@A ~]# ls -ld /boot/   #显示目录本身的详细属性
+[root@A ~]# ls -lh /boot/   #目录内容详细属性加大小单位
+
+[root@A ~]# ls -ld /root
+[root@A ~]# ls -lh /root
+
+#################################################
+使用通配符
+• 针对不确定的文档名称,以特殊字符表示
+ – *:任意多个任意字符
+ – ?:单个字符
+
+[root@A ~]# ls  /boot/vm*     #列出以vm开头
+[root@A ~]# ls  /etc/*tab     #列出以tab结尾
+[root@A ~]# ls  /dev/tty*     #列出以tty开头
+[root@A ~]# ls  /etc/*.conf   #列出以.conf结尾
+
+[root@A ~]# ls  /dev/tty?
+[root@A ~]# ls  /dev/tty??
+[root@A ~]# ls  /dev/tty???
+
+• 针对不确定的文档名称,以特殊字符表示
+– [a-z]:多个字符或连续范围中的一个,若无则忽略
+– {a,min,xy}:多组不同的字符串,全匹配
+
+[root@A ~]# ls /dev/tty[3-8]
+[root@A ~]# ls /dev/tty[1-9]
+
+[root@A ~]# ls /dev/tty{1,3,5,60}
+[root@A ~]# ls /dev/tty{1,3,5,60,S0}
+[root@A ~]# ls /dev/tty{1,3,5,60,S0,S1}
+[root@A ~]# ls /dev/tty{21,32}
+
+  请列出/dev设备中，tty20至tty30的设备
+ [root@A ~]# ls  /dev/tty{2[0-9],30} 
+
+##############################################
+别名的定义：简化复杂的命令
+
+• 查看已设置的别名
+– alias  [别名名称]
+
+• 定义新的别名
+– alias  别名名称= '实际执行的命令行'
+
+• 取消已设置的别名
+– unalias  [别名名称]
+
+[root@A ~]# alias hn='hostname'  #定义别名
+[root@A ~]# alias                #查看当前有效别名
+
+[root@A ~]# hn             #执行成功
+
+[root@A ~]# unalias  hn    #删除hn别名
+[root@A ~]# hn             #执行失败
+
+[root@A ~]# alias myls='ls  -ld'   #定义别名
+[root@A ~]# myls  /root
+
+[root@A ~]# unalias  myls  #删除myls别名
+[root@A ~]# myls  /root    #执行失败
+   
+ 
+
+##################################################
+  文档：目录和文件
+  
+mkdir 创建目录
+• mkdir — Make Directory
+– 格式:mkdir [-p] [/路径/]目录名...
+
+[root@A ~]# mkdir -p /vod/movie/cartoon
+[root@A ~]# ls  -R /vod
+
+[root@A ~]# mkdir -p /opt/aa/bb/cc/dd
+[root@A ~]# ls /opt/
+
+[root@A ~]# ls -R /opt/aa
+    -R：递归
+
+##############################################
+rm 删除
+• rm — Remove
+  – 格式:rm [选项]...  文件或目录...
+
+• 常用命令选项
+ – -r、-f:递归删除(含目录)、强制删除
+
+   [root@A ~]# rm -rf  /opt/*
+   [root@A ~]# mkdir  /opt/nsd01
+   [root@A ~]# touch  /opt/1.txt
+
+   [root@A ~]# ls  /opt
+   [root@A ~]# rm -rf  /opt/nsd01
+   [root@A ~]# ls  /opt
+
+##############################################
+mv 移动/重命名
+• mv — Move
+– 格式:mv  原文件...     目标路径
+
+[root@A ~]# rm -rf /opt/*
+[root@A ~]# mkdir /opt/nsd01
+[root@A ~]# touch  /opt/1.txt
+
+[root@A ~]# ls /opt/
+[root@A ~]# mv /opt/1.txt /opt/nsd01
+
+[root@A ~]# ls /opt/
+[root@A ~]# ls /opt/nsd01
+
+[root@A ~]# touch  /opt/2.txt
+[root@A ~]# ls /opt/
+[root@A ~]# mv /opt/2.txt /opt/nsd01
+[root@A ~]# ls /opt/nsd01
+
+重命名：路径不变的移动            
+[root@A ~]# ls /opt/
+nsd01
+[root@A ~]# mv /opt/nsd01  /opt/student
+[root@A ~]# ls /opt/
+
+[root@A ~]# mv /opt/student/  /opt/test
+[root@A ~]# ls /opt/
+
+[root@A ~]# mv /opt/test/   /opt/abc
+[root@A ~]# ls /opt/
+
+[root@A ~]# mv /opt/abc   /opt/nsd
+[root@A ~]# ls /opt/
+
+#################################################
+cp 复制
+• cp — Copy
+– 格式:cp [选项]... 原文件...    目标路径
+
+• 常用命令选项
+– -r:递归,复制目录时必须有此选项
+
+[root@A ~]# rm -rf  /opt/*
+[root@A ~]# cp /etc/passwd  /opt/
+[root@A ~]# ls /opt/
+
+[root@A ~]# cp -r /boot/  /opt/
+[root@A ~]# ls /opt/
+
+[root@A ~]# cp /etc/fstab   /opt/
+[root@A ~]# ls /opt/
+
+[root@A ~]# cp /etc/redhat-release   /opt/
+[root@A ~]# ls /opt/
+
+复制时重名文档
+在本次操作中，临时取消别名
+[root@A ~]# \cp  -r   /boot/   /opt/  
+[root@A ~]# \cp  -r   /boot/   /opt/
+
+复制支持两个以上的参数，
+永远把最后一个参数作为目标，其他参数全部作为源
+# cp /etc/shells  /etc/shadow  /etc/group  /opt/
+# ls /opt/
+
+    . 表示当前目录
+# cd /etc/sysconfig/network-scripts/
+# cp /etc/fstab        .
+# ls
+# cp /etc/passwd      .
+# ls
+
+ 复制的时候，可以重新命名，目标路径下文档的名字
+[root@A /]# cp /etc/redhat-release /mnt/a
+[root@A /]# ls /mnt/
+
+[root@A /]# cp -r /boot/ /mnt/nsd08
+[root@A /]# ls /mnt/
+
+请说出下列两次复制操作的不同
+# rm -rf /mnt/*
+# cp -r /home  /mnt/redhat  
+      #将home目录，复制到/mnt下命名为redhat
+# cp -r /home  /mnt/redhat
+      #将home目录，复制到/mnt/redhat/路径下
+
+[root@A /]# rm -rf /mnt/*
+[root@A /]# cp -r  /home/   /mnt/redhat
+[root@A /]# ls /mnt/
+redhat
+[root@A /]# cp -r  /home/  /mnt/redhat
+[root@A /]# ls /mnt/
+redhat
+[root@A /]# ls /mnt/redhat/
+#################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

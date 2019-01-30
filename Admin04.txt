@@ -1,0 +1,402 @@
+教学环境介绍
+预装虚拟机说明
+• 每个学员机上有三台预先配置好的虚拟机
+  – server —— 作为练习用服务器
+  – desktop —— 作为练习用客户机
+  – classroom —— 提供DHCP/网关/DNS/软件素材等资源
+
+  首先启动classroom虚拟机，后启动server与desktop
+
+真机还原的命令：首先还原classroom虚拟机
+  #先重置资源服务器
+[root@room9pc13 ~]# rht-vmctl reset classroom
+
+[root@room9pc13 ~]# rht-vmctl reset server
+[root@room9pc13 ~]# rht-vmctl reset desktop
+
+ 利用root账户，密码redhat   登陆虚拟机server与desktop
+
+虚拟机Server：
+       1.查看系统版本： RHEL 7.0
+       2.查看主机名：server0.example.com
+       3.查看第一张eth0网卡:  172.25.0.11/24
+
+虚拟机desktop：
+       1.查看系统版本： RHEL 7.0
+       2.查看主机名：desktop0.example.com
+       3.查看第一张eth0网卡:  172.25.0.10/24
+
+################################################
+真机远程管理，虚拟机server与desktop
+
+1.真机测试通信进行ping
+
+2.远程管理的命令: ssh  用户名@服务器的IP地址 
+[root@room9pc01 ~]# ssh  root@172.25.0.11
+
+[root@room9pc01 ~]# ssh  root@172.25.0.10
+
+   Ctrl+Shift+t:  开启一个新的终端
+ 
+
+#################################################
+在远程管理时，本地运行对方的图形程序
+[root@server0 ~]# exit      #退出远程管理
+登出
+Connection to 172.25.0.11 closed.
+
+[root@room9pc01 ~]# ssh -X  root@172.25.0.11
+
+[root@server0 ~]# firewall-config 
+[root@server0 ~]# firefox
+
+################################################
+为真机设置永久的别名
+[root@room9pc01 ~]# ls /root/.bashrc  #系统级配置文件 
+/root/.bashrc
+[root@room9pc01 ~]# vim  /root/.bashrc
+[root@room9pc01 ~]# head -3 /root/.bashrc
+ # .bashrc
+ alias  gos='ssh  -X  root@172.25.0.11'
+ alias  god='ssh  -X  root@172.25.0.10'
+
+   新开一个终端，才会生效
+
+################################################
+软件包管理
+
+一、零散软件管理（软件包来源光盘中）
+  虚拟机classroom搭建Web服务，提供RHEL7.0光盘内容
+
+  虚拟机server：
+  访问测试：firefox  classroom.example.com
+
+  http://classroom.example.com/content/rhel7.0/x86_64/dvd/Packages/
+
+  通过命令wget 在命令行实现下载：默认下载到当前路径下
+[root@server0 ~]# cd /root
+
+[root@server0 ~]# wget http://classroom.example.com/content/rhel7.0/x86_64/dvd/Packages/vsftpd-3.0.2-9.el7.x86_64.rpm
+
+    在浏览器中----->  按Ctrl + f 可以进行查找-----> vsftpd
+    右击 包名----->复制链接地址
+
+#################################################
+传统的安装软件包的命令
+
+– rpm -q 软件名...
+– rpm -ivh 软件名-版本信息.rpm...
+– rpm -e 软件名...
+
+[root@server0 ~]# rpm -q firefox  #查询软件包是否安装
+[root@server0 ~]# rpm -q zip
+[root@server0 ~]# rpm -q vsftpd
+
+[root@server0 ~]# LANG=en        #临时改变系统语言为英文
+[root@server0 ~]# rpm -q vsftpd
+package vsftpd is not installed  #软件包当前系统未安装
+[root@server0 ~]# rpm -q hostname
+[root@server0 ~]# rpm -q xeyes
+
+[root@server0 ~]# rpm -ivh /root/vs(tab)   #安装
+
+[root@server0 ~]# rpm -q vsftpd   #查询是否安装成功
+[root@server0 ~]# rpm -ql vsftpd  #查询软件包安装的内容
+
+[root@server0 ~]# rpm -e vsftpd   #卸载
+[root@server0 ~]# rpm -q vsftpd   #查询是否卸载成功
+
+################################################
+常见的提示：软件包已经安装
+[root@server0 ~]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+警告：/root/vsftpd-3.0.2-9.el7.x86_64.rpm: 头V3 RSA/SHA256 Signature, 密钥 ID fd431d51: NOKEY
+	软件包 vsftpd-3.0.2-9.el7.x86_64 已经安装
+[root@server0 ~]# LANG=en
+[root@server0 ~]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+warning: /root/vsftpd-3.0.2-9.el7.x86_64.rpm: Header V3 RSA/SHA256 Signature, key ID fd431d51: NOKEY
+	package vsftpd-3.0.2-9.el7.x86_64 is already installed
+[root@server0 ~]# 
+
+#################################################
+了解内容：导入红帽的签名信息
+[root@server0 ~]# cd /root
+[root@server0 ~]# firefox classroom.example.com
+
+[root@server0 ~]# wget http://classroom.example.com/content/rhel7.0/x86_64/dvd/RPM-GPG-KEY-redhat-release
+
+[root@server0 ~]# rpm --import /root/RPM-GPG-KEY-redhat-release  #导入红帽的签名信息
+
+[root@server0 ~]# rpm -e vsftpd     #卸载
+[root@server0 ~]# rpm -ivh /root/vs(tab)  #再进行安装
+
+#################################################
+虚拟机Server升级内核   
+1.下载新的内核软件包
+[root@server0 ~]# cd /root/
+[root@server0 ~]# firefox classroom.example.com
+
+[root@server0 ~]# wget http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm
+
+2.安装新的内核
+[root@server0 ~]# rpm -ivh /root/kernel-3.10.0-123.1.2.el7.x86_64.rpm 
+
+[root@server0 ~]# uname -r   #查看内核版本
+[root@server0 ~]# reboot     #重起验证
+
+[root@room9pc01 ~]# gos
+[root@server0 ~]# uname -r   #查看内核版本
+3.10.0-123.1.2.el7.x86_64
+
+##################################################
+常见错误：依赖关系失败
+[root@server0 ~]# rpm -ivh /root/bind-chroot-9.9.4-14.el7.x86_64.rpm 
+错误：依赖检测失败：
+	bind = 32:9.9.4-14.el7 被 bind-chroot-32:9.9.4-14.el7.x86_64 需要
+
+#################################################
+构建Yum仓库   自动解决依赖关系，安装软件
+
+ 服务：为客户端自动解决依赖关系，安装软件
+
+   虚拟机classroom
+   服务端：  1.众多的软件包 
+                  2.仓库的数据文件（仓库清单文件）
+                  3.搭建服务共享光盘所有内容
+
+   虚拟机server
+   客户端：书写一个配置文件，指定服务端位置
+   路径及名称：/etc/yum.repos.d/*.repo
+   错误的文件会影响正确文件
+ [root@server0 ~]# rm -rf /etc/yum.repos.d/*
+ [root@server0 ~]# ls /etc/yum.repos.d/
+ [root@server0 ~]# vim /etc/yum.repos.d/nsd.repo
+ [rhel7]         #仓库的标识，随意写不要出现空格
+ name=rhel7.0    #仓库的描述信息，随意写
+ baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/    #指定服务端位置
+ enabled=1       #是否启用本文件
+ gpgcheck=0      #是否检测软件包红帽签名
+[root@server0 ~]# yum  repolist      #显示所有仓库信息
+[root@server0 ~]# yum  install 软件名
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# yum -y install gcc
+[root@server0 ~]# yum -y install sssd
+
+[root@server0 ~]# yum clean  all  #清空Yum所有缓存
+  让客户端重新读取配置文件
+
+[root@server0 ~]# yum remove  软件名    #卸载
+
+################################################
+了解内容：
+• 快速建立repo配置文件
+– yum-config-manager --add-repo 软件仓库地址
+
+################################################
+配置网络
+
+一、配置永久的主机名
+[root@server0 /]# vim /etc/hostname #永久主机名配置文件
+A.tedu.cn
+[root@server0 /]# exit
+登出
+[root@room9pc01 ~]# gos
+[root@A ~]# hostname
+A.tedu.cn
+[root@A ~]# 
+
+##################################################
+
+
+
+
+
+
+
+
+
+
+二、配置永久的IP地址、子网掩码、网关地址
+
+
+三、配置永久的DNS服务器地址，将域名解析为对应的IP地址
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
